@@ -30,7 +30,7 @@ function transformChunks(source, {chunksPath, chunksExt, varPrefix}, addDependen
   }))
     .then(files => {
       files.forEach(file => {
-        const re = new RegExp(`#include\\s${path.basename(file.path, `.${chunksExt}`)}\\s;`, 'g');
+        const re = new RegExp(`#include\\s+${path.basename(file.path, `.${chunksExt}`)}\\s*;`, 'g');
         source = source.replace(re, file.content);
       });
       callback(null, `module.exports = opts => ${transformVars(source, varPrefix)};`);

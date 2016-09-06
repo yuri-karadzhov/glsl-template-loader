@@ -1,6 +1,6 @@
 {
   "name": "glsl-template-loader",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "This module provides template loader for glsl shaders that support variables and #include directive.",
   "main": "index.js",
   "repository": {
