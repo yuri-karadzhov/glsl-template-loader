@@ -1,0 +1,19 @@
+{
+  "name": "glsl-template-loader",
+  "version": "1.0.0",
+  "description": "This module provides template loader for glsl shaders that support variables and #include directive.",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:yuri-karadzhov/glsl-template-loader.git"
+  },
+  "keywords": [
+    "glsl webpack loader",
+    "include directive",
+    "template"
+    "webpack",
+    "loader"
+  ],
+  "homepage": "https://github.com/yuri-karadzhov/glsl-template-loader.git",
+  "license": "MIT"
+}
