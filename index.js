@@ -23,7 +23,7 @@ function transformVars(source, varPrefix) {
 }
 
 function transformChunks(source, {chunksPath, chunksExt, varPrefix}, addDependency, callback) {
-  Promise.all([...new Set(source.match(/#include\s[\w\-]+/g))].map(fileName => {
+  Promise.all([...new Set(source.match(/#include\s+[\w\-]+/g))].map(fileName => {
     const chunkPath = path.resolve(`${chunksPath}/${fileName.substr(9).trim()}.${chunksExt}`);
     addDependency(chunkPath);
     return readFile(chunkPath, 'utf-8');
