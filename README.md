@@ -13,8 +13,8 @@ module: {
 },
 // Default values (can be ommited)
 glsl: {
-  chunksPath: path(__dirname, '/src/chunks'),
-  chunksExt: 'glsl',
+  chunksPath: './src/chunks', // Path to look chunks at
+  chunksExt: 'glsl', // Chunks extension
   varPrefix: '$' // Every valid name that starts with this symbol will be treated as a template variable
 }
 ```
@@ -50,10 +50,9 @@ void main() {
 chunks/reduce-red.glsl
 ```
 vec3 reduceR(vec3 color) {
-  // We arge going to use a template variable $reduce
-  // Note that we use $reduce.0 to pass float value
-  // And we expect to pass integer values to template
-  // Alternatively we can use cast float($reduce)
+  // We arge going to use a template variable $reduce that would be inlined with it's value
+  // Note that we use $reduce.0 to transform int values from template to float
+  // Alternatively we can use cast float($reduce) or pass float string to template
   return vec3(color.r / $reduce.0, color.g, color.b);
 }
 ```
@@ -71,7 +70,7 @@ const createFragmentShader = require('shader.frag');
 
 ## Create shaders
 ```
-// That how we pass our reduce variable to templates
+// That's how we pass our reduce variable to templates
 const vertexShader = createVertexShader({reduce: 5});
 const fragmentShader = createFragmentShader({reduce: 2});
 ```
