@@ -22,22 +22,23 @@ function transformVars(source, varPrefix) {
   return '`' + source.replace(varRe, '${opts.$1}') + '`';
 }
 
-function transformChunks(source, {chunksPath, chunksExt, varPrefix}, addDependency, callback) {
-  Promise.all([...new Set(source.match(/#include\s+[\w\-]+/g))].map(fileName => {
-    const chunkPath = path.resolve(`${chunksPath}/${fileName.substr(9).trim()}.${chunksExt}`);
+function transformChunks(source, opts, addDependency, callback) {
+  const matches = [...new Set(source.match(/#include\s+[\w\-]+/g))];
+  Promise.all(matches.map(fileName => {
+    const chunkPath = path.resolve(`${opts.chunksPath}/${fileName.substr(9).trim()}.${opts.chunksExt}`);
     addDependency(chunkPath);
     return readFile(chunkPath, 'utf-8');
   }))
     .then(files => {
       files.forEach(file => {
-        const re = new RegExp(`#include\\s+${path.basename(file.path, `.${chunksExt}`)}\\s*;`, 'g');
+        const re = new RegExp(`#include\\s+${path.basename(file.path, `.${opts.chunksExt}`)}\\s*;`, 'g');
         source = source.replace(re, file.content);
       });
-      callback(null, `module.exports = opts => ${transformVars(source, varPrefix)};`);
+      callback(null, `module.exports = opts => ${transformVars(source, opts.varPrefix)};`);
     })
     .catch(err => {
-      console.err(err);
-      callback(null, `module.exports = opts => ${transformVars(source, varPrefix)};`);
+      console.err('glsl-template-loader: ', err);
+      callback(null, `module.exports = opts => ${transformVars(source, opts.varPrefix)};`);
     });
 }
 
@@ -45,8 +46,10 @@ module.exports = function(source) {
   this.cacheable();
   const callback = this.async();
   const addDependency = this.addDependency.bind(this);
-  const chunksPath = (this.options.glsl && this.options.glsl.chunksPath) || DEFAULT_CHUNKS_PATH;
-  const chunksExt = (this.options.glsl && this.options.glsl.chunksExt) || DEFAULT_CHUNKS_EXT;
-  const varPrefix = (this.options.glsl && this.options.glsl.varPrefix) || DEFAULT_VAR_PREFIX;
-  transformChunks(source, {chunksPath, chunksExt, varPrefix}, addDependency, callback);
+  const opts = {
+    chunksPath: (this.options.glsl && this.options.glsl.chunksPath) || DEFAULT_CHUNKS_PATH,
+    chunksExt: (this.options.glsl && this.options.glsl.chunksExt) || DEFAULT_CHUNKS_EXT,
+    varPrefix: (this.options.glsl && this.options.glsl.varPrefix) || DEFAULT_VAR_PREFIX
+  };
+  transformChunks(source, opts, addDependency, callback);
 };
