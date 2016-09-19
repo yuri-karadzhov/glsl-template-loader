@@ -15,5 +15,9 @@
     "loader"
   ],
   "homepage": "https://github.com/yuri-karadzhov/glsl-template-loader.git",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "babel-core": "^6.14.0",
+    "babel-preset-es2015": "^6.14.0"
+  }
 }

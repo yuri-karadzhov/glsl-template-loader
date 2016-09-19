@@ -1,5 +1,8 @@
 const fs = require('fs');
 const path = require('path');
+const babelCore = require('babel-core');
+const babelPresetEs2015 = require('babel-preset-es2015');
+
 
 const DEFAULT_CHUNKS_PATH = './src/chunks';
 const DEFAULT_CHUNKS_EXT = 'glsl';
@@ -44,8 +47,29 @@ function transformChunks(source, opts, addDependency, callback) {
 
 module.exports = function(source) {
   this.cacheable();
-  const callback = this.async();
+  const _callback = this.async();
+  const callback = (err, transformedSource) => {
+    if(err) {
+      return _callback(err, transformedSource);
+    }
+    try {
+      const code = babelCore.transform(transformedSource, {
+        presets: [babelPresetEs2015],
+        babelrc: false,
+        ast: false,
+        compact: true,
+        minified: true,
+        retainLines: true
+      }).code;
+      _callback(null, code);
+    } catch(e) {
+      console.error('glsl-template-loader: babel transform failed:', e);
+      _callback(e);
+    }
+  };
+
   const addDependency = this.addDependency.bind(this);
+
   const opts = {
     chunksPath: (this.options.glsl && this.options.glsl.chunksPath) || DEFAULT_CHUNKS_PATH,
     chunksExt: (this.options.glsl && this.options.glsl.chunksExt) || DEFAULT_CHUNKS_EXT,
