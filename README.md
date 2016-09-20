@@ -4,7 +4,7 @@
 ```npm install glsl-template-loader --save-dev```
 
 ## Config Webpack
-```
+``` js
 module: {
   loaders: [{
     test: /\.(glsl|vert|frag)$/,
@@ -21,7 +21,7 @@ glsl: {
 
 ## Write some shaders
 shader.vert
-```
+``` glsl
 attribute vec2 a_Position;
 attribute vec3 a_Color;
 
@@ -36,7 +36,7 @@ void main(void) {
 }
 ```
 shader.frag
-```
+``` glsl
 precision highp float;
 
 varying vec3 v_Color;
@@ -48,7 +48,7 @@ void main() {
 }
 ```
 chunks/reduce-red.glsl
-```
+``` glsl
 vec3 reduceR(vec3 color) {
   // We arge going to use a template variable $reduce that would be inlined with it's value
   // Note that we use $reduce.0 to transform int values from template to float
@@ -58,18 +58,18 @@ vec3 reduceR(vec3 color) {
 ```
 
 ## Import your shader templates
-```
+``` js
 import createVertexShader from 'shader.vert';
 import createFragmentShader from 'shader.frag';
 ```
 or
-```
+``` js
 const createVertexShader = require('shader.vert');
 const createFragmentShader = require('shader.frag');
 ```
 
 ## Create shaders
-```
+``` js
 // That's how we pass our reduce variable to templates
 const vertexShader = createVertexShader({reduce: 5});
 const fragmentShader = createFragmentShader({reduce: 2});
