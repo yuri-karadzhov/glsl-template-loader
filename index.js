@@ -2,13 +2,15 @@ const fs = require('fs');
 const path = require('path');
 const babelCore = require('babel-core');
 const babelPresetEs2015 = require('babel-preset-es2015');
+const Promise = require('bluebird');
+const chalk = require('chalk');
+const glsl = require('glsl-man');
 
 
-const DEFAULT_CHUNKS_PATH = './src/chunks';
-const DEFAULT_CHUNKS_EXT = 'glsl';
 const DEFAULT_VAR_PREFIX = '$';
 
-function readFile(filePath, options) {
+
+function readFileAsync(filePath, options) {
   return new Promise((resolve, reject) => {
     fs.readFile(filePath, options, (err, content) => {
       if(err) return reject(err);
@@ -20,30 +22,77 @@ function readFile(filePath, options) {
   });
 }
 
+
 function transformVars(source, varPrefix) {
   const varRe = new RegExp(`\\${varPrefix}([\\w^\\d]\\w*)`, 'g');
   return '`' + source.replace(varRe, '${opts.$1}') + '`';
 }
 
-function transformChunks(source, opts, addDependency, callback) {
-  const matches = [...new Set(source.match(/#include\s+[\w\-]+/g))];
-  Promise.all(matches.map(fileName => {
-    const chunkPath = path.resolve(`${opts.chunksPath}/${fileName.substr(9).trim()}.${opts.chunksExt}`);
-    addDependency(chunkPath);
-    return readFile(chunkPath, 'utf-8');
-  }))
-    .then(files => {
-      files.forEach(file => {
-        const re = new RegExp(`#include\\s+${path.basename(file.path, `.${opts.chunksExt}`)}\\s*;`, 'g');
-        source = source.replace(re, file.content);
-      });
-      callback(null, `module.exports = opts => ${transformVars(source, opts.varPrefix)};`);
-    })
-    .catch(err => {
-      console.err('glsl-template-loader: ', err);
-      callback(null, `module.exports = opts => ${transformVars(source, opts.varPrefix)};`);
-    });
+
+function resolveAsync(loader, context, request) {
+  return new Promise((resolve, reject) => {
+    loader.resolve(
+      context,
+      request,
+      (err, res) => {
+        if(err) {
+          reject(err);
+        } else {
+          resolve(res);
+        }
+      }
+    );
+  });
 }
+
+
+function printError(currentFile, err) {
+  console.error('\n');
+  console.error(`glsl-template-loader error: ${currentFile}`);
+  console.error('\t' + chalk.red(err.message));
+  if(err.details) {
+    console.error(chalk.yellow(err.details));
+  }
+  console.error('\n');
+}
+
+
+function transformChunks(source, opts, loader, callback) {
+  const ast = glsl.parse(source);
+  const includes = glsl.query.all(
+    ast,
+    glsl.query.selector('preprocessor[directive]')
+  ).filter(include => include.directive === '#include');
+
+  Promise.map(includes, node => {
+    const requestedInclude = node.value.replace(/;/g, '');
+    return resolveAsync(
+      loader,
+      path.dirname(loader.resource),
+      requestedInclude
+    ).then(chunkPath => {
+      loader.addDependency(chunkPath);
+      return readFileAsync(chunkPath, 'utf-8');
+    }).then(file => {
+      return {
+        file: file,
+        node: node
+      };
+    });
+  }).then(matches => {
+    matches.forEach(match => {
+      const subTree = glsl.parse(match.file.content);
+      glsl.mod.replace(match.node, subTree);
+    });
+
+    const newSource = glsl.string(ast);
+    callback(null, `module.exports = opts => ${transformVars(newSource, opts.varPrefix)};`);
+  }).catch(err => {
+    printError(loader.resource, err);
+    callback(err);
+  });
+}
+
 
 module.exports = function(source) {
   this.cacheable();
@@ -68,12 +117,9 @@ module.exports = function(source) {
     }
   };
 
-  const addDependency = this.addDependency.bind(this);
-
   const opts = {
-    chunksPath: (this.options.glsl && this.options.glsl.chunksPath) || DEFAULT_CHUNKS_PATH,
-    chunksExt: (this.options.glsl && this.options.glsl.chunksExt) || DEFAULT_CHUNKS_EXT,
     varPrefix: (this.options.glsl && this.options.glsl.varPrefix) || DEFAULT_VAR_PREFIX
   };
-  transformChunks(source, opts, addDependency, callback);
+
+  transformChunks(source, opts, this, callback);
 };
