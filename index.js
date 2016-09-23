@@ -1,3 +1,5 @@
+'use strict';
+
 const fs = require('fs');
 const path = require('path');
 const babelCore = require('babel-core');
@@ -5,6 +7,7 @@ const babelPresetEs2015 = require('babel-preset-es2015');
 const Promise = require('bluebird');
 const chalk = require('chalk');
 const glsl = require('glsl-man');
+const leftPad = require('left-pad');
 
 
 const DEFAULT_VAR_PREFIX = '$';
@@ -46,19 +49,66 @@ function resolveAsync(loader, context, request) {
 }
 
 
-function printError(currentFile, err) {
-  console.error('\n');
-  console.error(`glsl-template-loader error: ${currentFile}`);
-  console.error('\t' + chalk.red(err.message));
+function printError(loader, err) {
+  let s = '\t' + chalk.red(err.message);
   if(err.details) {
-    console.error(chalk.yellow(err.details));
+    s += '\n' + chalk.yellow(err.details);
   }
-  console.error('\n');
+
+  const emitter = loader.emitError; // or loader.emitWarning
+  emitter(s);
+}
+
+
+function printParseError(loader, source, err) {
+  let s = chalk.red(err.name) + ': ' + chalk.white(err.message);
+  s += '\n';
+  // Get the line in question
+  const lines = source.split('\n');
+  const contextLineCount = 2;
+  const errStartLine = err.location.start.line - 1;
+  const errEndLine = err.location.end.line - 1;
+
+  const startLine = Math.max(errStartLine - contextLineCount, 0);
+  const endLine = Math.min(errEndLine + contextLineCount, lines.length - 1);
+
+  const trayWidth = endLine.toString().length;
+  const traySep = '| ';
+  // const trayWidthReal = trayWidth + traySep.length;
+
+  for(let i = startLine; i <= endLine; i++) {
+    s += '\n' + chalk.dim.white(leftPad(i, trayWidth) + traySep) + lines[i];
+    if(i === errStartLine) {
+      const startCol = err.location.start.column;
+      const endCol = err.location.end.column;
+      s += (
+        '\n' +
+        ' '.repeat(trayWidth) +
+        chalk.dim.white(traySep) +
+        ' '.repeat(startCol - 1) +
+        chalk.red(
+          '^' +
+          (startLine === endLine ? '-'.repeat(endCol - startCol - 1) : '')
+        )
+      );
+    }
+  }
+
+  const emitter = loader.emitError; // or loader.emitWarning
+  emitter(s);
 }
 
 
 function transformChunks(source, opts, loader, callback) {
-  const ast = glsl.parse(source);
+  let ast;
+  try {
+    ast = glsl.parse(source);
+  } catch(err) {
+    printParseError(loader, source, err);
+    callback(err);
+    return;
+  }
+
   const includes = glsl.query.all(
     ast,
     glsl.query.selector('preprocessor[directive]')
@@ -88,7 +138,7 @@ function transformChunks(source, opts, loader, callback) {
     const newSource = glsl.string(ast);
     callback(null, `module.exports = opts => ${transformVars(newSource, opts.varPrefix)};`);
   }).catch(err => {
-    printError(loader.resource, err);
+    printError(loader, err);
     callback(err);
   });
 }
@@ -111,9 +161,9 @@ module.exports = function(source) {
         retainLines: true
       }).code;
       _callback(null, code);
-    } catch(e) {
-      console.error('glsl-template-loader: babel transform failed:', e);
-      _callback(e);
+    } catch(babelErr) {
+      printError(this, babelErr);
+      _callback(babelErr);
     }
   };
 
