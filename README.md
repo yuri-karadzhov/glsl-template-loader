@@ -8,7 +8,7 @@
 module: {
   loaders: [{
     test: /\.(glsl|vert|frag)$/,
-    loader: 'shader'
+    loader: 'glsl-template'
   }]
 },
 // Default values (can be omitted)
