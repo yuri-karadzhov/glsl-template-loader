@@ -1,6 +1,6 @@
 {
   "name": "glsl-template-loader",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "description": "This module provides template loader for glsl shaders that support variables and #include directive.",
   "main": "index.js",
   "repository": {
@@ -15,5 +15,10 @@
     "loader"
   ],
   "homepage": "https://github.com/yuri-karadzhov/glsl-template-loader.git",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "babel-core": "^6.18.2",
+    "babel-plugin-transform-es2015-template-literals": "^6.8.0",
+    "glsl-man": "^1.1.2"
+  }
 }

@@ -11,11 +11,12 @@ module: {
     loader: 'shader'
   }]
 },
-// Default values (can be ommited)
+// Default values (can be omitted)
 glsl: {
-  chunksPath: './src/chunks', // Path to look chunks at
+  rootPath: '/', // Path to look absolute path chunks at
   chunksExt: 'glsl', // Chunks extension
-  varPrefix: '$' // Every valid name that starts with this symbol will be treated as a template variable
+  varPrefix: '$', // Every valid name that starts with this symbol will be treated as a template variable
+  es5: true // Produce template compatible with es5 browsers (IE11)
 }
 ```
 
@@ -28,7 +29,7 @@ attribute vec3 a_Color;
 varying vec3 v_Color;
 
 // The content of chunks/reduce-red.glsl file will be inlined here
-#include reduce-red;
+#include chunks/reduce-red.glsl;
 
 void main(void) {
   v_Color = reduceR(a_Color);
@@ -41,7 +42,7 @@ precision highp float;
 
 varying vec3 v_Color;
 
-#include reduce-red;
+#include chunks/reduce-red.glsl;
 
 void main() {
   gl_FragColor = vec4(reduceR(v_Color), 0.5);
@@ -74,6 +75,9 @@ const createFragmentShader = require('shader.frag');
 const vertexShader = createVertexShader({reduce: 5});
 const fragmentShader = createFragmentShader({reduce: 2});
 ```
+
+## Work with nodejs 4
+Use ```--harmony``` flag to build with nodejs 4.
 
 ## License
 [MIT](http://www.opensource.org/licenses/mit-license.php)
