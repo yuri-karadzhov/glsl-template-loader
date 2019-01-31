@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const glsl = require('glsl-man');
-const babel = require('babel-core');
+const babel = require('@babel/core');
 
 const DEFAULT_ROOT_PATH = '/';
 const DEFAULT_CHUNKS_EXT = 'glsl';
@@ -45,7 +45,7 @@ function transformVars(source, varPrefix) {
 function transformBabel(source, callback) {
   try {
     const code = babel.transform(source, {
-      plugins: ['transform-es2015-template-literals'],
+      plugins: ['@babel/transform-template-literals'],
       babelrc: false,
       ast: false,
       compact: true,
@@ -93,9 +93,10 @@ function transformChunks(source, {rootPath, chunksExt, varPrefix, es5}, loader) 
 }
 
 module.exports = function(source) {
-  const rootPath = (this.options.glsl && this.options.glsl.rootPath) || DEFAULT_ROOT_PATH;
-  const chunksExt = (this.options.glsl && this.options.glsl.chunksExt) || DEFAULT_CHUNKS_EXT;
-  const varPrefix = (this.options.glsl && this.options.glsl.varPrefix) || DEFAULT_VAR_PREFIX;
-  const es5 = (this.options.glsl && this.options.glsl.es5 !== undefined) ? this.options.glsl.es5 : true;
+  const query = this.query;
+  const rootPath = (query.glsl && query.glsl.rootPath) || DEFAULT_ROOT_PATH;
+  const chunksExt = (query.glsl && query.glsl.chunksExt) || DEFAULT_CHUNKS_EXT;
+  const varPrefix = (query.glsl && query.glsl.varPrefix) || DEFAULT_VAR_PREFIX;
+  const es5 = (query.glsl && query.glsl.es5 !== undefined) ? query.glsl.es5 : true;
   transformChunks(source, {rootPath, chunksExt, varPrefix, es5}, this);
 };

@@ -17,8 +17,8 @@
   "homepage": "https://github.com/yuri-karadzhov/glsl-template-loader.git",
   "license": "MIT",
   "dependencies": {
-    "babel-core": "^6.18.2",
-    "babel-plugin-transform-es2015-template-literals": "^6.8.0",
-    "glsl-man": "^1.1.2"
+    "@babel/core": "^7.2.2",
+    "@babel/plugin-transform-template-literals": "^7.2.0",
+    "glsl-man": "^1.1.14"
   }
 }
